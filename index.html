@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Overwatch 2 スクリム SR 計算・対戦分析ツール</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Teko:wght@600;700&family=Noto+Sans+JP:wght@400;700;900&display=swap');
+    
+    body {
+      font-family: 'Noto Sans JP', sans-serif;
+      background-color: #0f141d;
+      color: #f1f5f9;
+    }
+    .ow-font {
+      font-family: 'Teko', sans-serif;
+      letter-spacing: 1px;
+    }
+    .ow-orange { color: #f99e1a; }
+    .bg-ow-orange { background-color: #f99e1a; }
+    .border-ow-orange { border-color: #f99e1a; }
+    .ow-card {
+      background: linear-gradient(135deg, #1e2638 0%, #171e2e 100%);
+      border: 1px solid #2e3a52;
+    }
+  </style>
+</head>
+<body class="min-h-screen pb-12">
+
+  <!-- Header -->
+  <header class="bg-slate-900 border-b border-slate-800 py-4 px-6 mb-8 shadow-lg">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+      <div class="flex items-center gap-3">
+        <div class="bg-ow-orange text-slate-950 font-black px-3 py-1 rounded skew-x-[-12deg] text-xl tracking-wider">
+          OW2
+        </div>
+        <h1 class="text-2xl font-black italic tracking-wide text-white">SCRIM SR CALCULATOR</h1>
+      </div>
+      
+      <!-- Mode Selector -->
+      <div class="bg-slate-800 p-1 rounded-lg border border-slate-700 flex text-sm font-bold">
+        <button id="btn-single" onclick="setMode('single')" class="px-4 py-1.5 rounded-md transition-all bg-ow-orange text-slate-950 shadow">
+          単一チーム計算
+        </button>
+        <button id="btn-vs" onclick="setMode('vs')" class="px-4 py-1.5 rounded-md transition-all text-slate-400 hover:text-white">
+          VS 対戦比較 (A vs B)
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4">
+    
+    <!-- VS Match Summary (Only in VS mode) -->
+    <div id="vs-summary" class="hidden mb-8 ow-card p-6 rounded-xl border-2 border-ow-orange shadow-2xl">
+      <h2 class="text-xl font-black text-center mb-4 italic tracking-wider text-slate-300">MATCH BALANCING (対戦分析)</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+        <!-- Team A SR -->
+        <div class="text-center p-4 bg-slate-900/60 rounded-lg border border-slate-800">
+          <div class="text-xs text-blue-400 font-bold uppercase tracking-wider mb-1">TEAM A 平均SR</div>
+          <div id="vs-teamA-sr" class="ow-font text-5xl font-bold text-white leading-none">0</div>
+          <div id="vs-teamA-rank" class="text-sm font-bold text-slate-400 mt-1">-</div>
+        </div>
+
+        <!-- Differential & Status -->
+        <div class="text-center flex flex-col items-center justify-center">
+          <div class="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">平均SR差</div>
+          <div id="vs-diff-sr" class="ow-font text-6xl font-bold ow-orange leading-none">0</div>
+          <div id="vs-status-badge" class="mt-2 px-4 py-1 rounded-full text-xs font-black tracking-widest uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
+            GOOD MATCH
+          </div>
+        </div>
+
+        <!-- Team B SR -->
+        <div class="text-center p-4 bg-slate-900/60 rounded-lg border border-slate-800">
+          <div class="text-xs text-red-400 font-bold uppercase tracking-wider mb-1">TEAM B 平均SR</div>
+          <div id="vs-teamB-sr" class="ow-font text-5xl font-bold text-white leading-none">0</div>
+          <div id="vs-teamB-rank" class="text-sm font-bold text-slate-400 mt-1">-</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Teams Container -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+      <!-- TEAM A -->
+      <div id="card-teamA" class="ow-card rounded-xl p-6 shadow-xl relative">
+        <div class="flex justify-between items-center mb-6 border-b border-slate-700/60 pb-3">
+          <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-blue-500 inline-block"></span>
+            <h2 id="title-teamA" class="text-xl font-black italic tracking-wide text-white">TEAM A メンバー編成</h2>
+          </div>
+          <button onclick="resetTeam('A')" class="text-xs font-bold text-slate-400 hover:text-slate-200 bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded transition">
+            リセット
+          </button>
+        </div>
+
+        <!-- Players Input -->
+        <div class="space-y-4 mb-6" id="players-teamA">
+          <!-- JSで動的生成 -->
+        </div>
+
+        <!-- Team A Stats Results -->
+        <div class="bg-slate-950/80 rounded-lg p-5 border border-slate-800/80 space-y-4">
+          <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+            <div>
+              <span class="text-xs font-bold text-slate-400 block uppercase">チーム平均 (Average)</span>
+              <span id="teamA-avg-rank" class="text-sm font-black text-ow-orange">ブロンズ 5 相当</span>
+            </div>
+            <div id="teamA-avg-sr" class="ow-font text-5xl font-bold text-white leading-none">0 <span class="text-lg text-slate-500">SR</span></div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2 text-center pt-1">
+            <div class="bg-slate-900/80 p-2.5 rounded border border-slate-800">
+              <span class="text-[10px] font-bold text-slate-400 block uppercase">中央値 (Median)</span>
+              <span id="teamA-median" class="ow-font text-2xl font-bold text-slate-200">0</span>
+            </div>
+            <div class="bg-slate-900/80 p-2.5 rounded border border-slate-800">
+              <span class="text-[10px] font-bold text-slate-400 block uppercase">最高 (Max)</span>
+              <span id="teamA-max" class="ow-font text-2xl font-bold text-emerald-400">0</span>
+            </div>
+            <div class="bg-slate-900/80 p-2.5 rounded border border-slate-800">
+              <span class="text-[10px] font-bold text-slate-400 block uppercase">最低 (Min)</span>
+              <span id="teamA-min" class="ow-font text-2xl font-bold text-rose-400">0</span>
+            </div>
+          </div>
+
+          <div id="teamA-spread" class="text-xs text-slate-400 text-right pt-1 font-bold">
+            チーム内SR格差: <span id="teamA-spread-val" class="text-white">0</span> SR
+          </div>
+        </div>
+      </div>
+
+      <!-- TEAM B (VS Mode Only) -->
+      <div id="card-teamB" class="ow-card rounded-xl p-6 shadow-xl relative hidden">
+        <div class="flex justify-between items-center mb-6 border-b border-slate-700/60 pb-3">
+          <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-red-500 inline-block"></span>
+            <h2 class="text-xl font-black italic tracking-wide text-white">TEAM B メンバー編成</h2>
+          </div>
+          <button onclick="resetTeam('B')" class="text-xs font-bold text-slate-400 hover:text-slate-200 bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded transition">
+            リセット
+          </button>
+        </div>
+
+        <!-- Players Input -->
+        <div class="space-y-4 mb-6" id="players-teamB">
+          <!-- JSで動的生成 -->
+        </div>
+
+        <!-- Team B Stats Results -->
+        <div class="bg-slate-950/80 rounded-lg p-5 border border-slate-800/80 space-y-4">
+          <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+            <div>
+              <span class="text-xs font-bold text-slate-400 block uppercase">チーム平均 (Average)</span>
+              <span id="teamB-avg-rank" class="text-sm font-black text-ow-orange">ブロンズ 5 相当</span>
+            </div>
+            <div id="teamB-avg-sr" class="ow-font text-5xl font-bold text-white leading-none">0 <span class="text-lg text-slate-500">SR</span></div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2 text-center pt-1">
+            <div class="bg-slate-900/80 p-2.5 rounded border border-slate-800">
+              <span class="text-[10px] font-bold text-slate-400 block uppercase">中央値 (Median)</span>
+              <span id="teamB-median" class="ow-font text-2xl font-bold text-slate-200">0</span>
+            </div>
+            <div class="bg-slate-900/80 p-2.5 rounded border border-slate-800">
+              <span class="text-[10px] font-bold text-slate-400 block uppercase">最高 (Max)</span>
+              <span id="teamB-min" class="ow-font text-2xl font-bold text-emerald-400">0</span>
+            </div>
+            <div class="bg-slate-900/80 p-2.5 rounded border border-slate-800">
+              <span class="text-[10px] font-bold text-slate-400 block uppercase">最低 (Min)</span>
+              <span id="teamB-min" class="ow-font text-2xl font-bold text-rose-400">0</span>
+            </div>
+          </div>
+
+          <div id="teamB-spread" class="text-xs text-slate-400 text-right pt-1 font-bold">
+            チーム内SR格差: <span id="teamB-spread-val" class="text-white">0</span> SR
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    // ランク・ディビジョン定義データ生成
+    const ranks = [
+      { name: "ブロンズ", base: 0 },
+      { name: "シルバー", base: 1500 },
+      { name: "ゴールド", base: 2000 },
+      { name: "プラチナ", base: 2500 },
+      { name: "エメラルド", base: 3000 },
+      { name: "ダイヤモンド", base: 3500 },
+      { name: "マスター", base: 4000 },
+      { name: "グランドマスター", base: 4500 }
+    ];
+
+    const rankOptions = [];
+
+    // ブロンズ5〜グラマス1を生成
+    ranks.forEach(r => {
+      for (let div = 5; div >= 1; div--) {
+        const sr = r.base + (5 - div) * 100;
+        rankOptions.push({
+          label: `${r.name} ${div} (${sr} SR)`,
+          sr: sr
+        });
+      }
+    });
+    // チャンピオンを追加
+    rankOptions.push({ label: "チャンピオン (5000 SR)", sr: 5000 });
+
+    // ロール定義
+    const roles = [
+      { id: "tank", name: "タンク", badge: "🛡️", defaultSr: 2500 }, // プラチナ5
+      { id: "dps1", name: "DPS 1", badge: "⚔️", defaultSr: 2500 },
+      { id: "dps2", name: "DPS 2", badge: "⚔️", defaultSr: 2500 },
+      { id: "sup1", name: "サポート 1", badge: "💉", defaultSr: 2500 },
+      { id: "sup2", name: "サポート 2", badge: "💉", defaultSr: 2500 }
+    ];
+
+    let currentMode = 'single'; // 'single' or 'vs'
+
+    // アプリ初期化
+    function init() {
+      renderTeamInputs('A');
+      renderTeamInputs('B');
+      calculateStats('A');
+      calculateStats('B');
+    }
+
+    // プレイヤー入力UI生成
+    function renderTeamInputs(team) {
+      const container = document.getElementById(`players-team${team}`);
+      container.innerHTML = '';
+
+      roles.forEach(role => {
+        const div = document.createElement('div');
+        div.className = 'flex items-center justify-between gap-3 bg-slate-900/60 p-3 rounded-lg border border-slate-800';
+        
+        const optionsHtml = rankOptions.map(opt => 
+          `<option value="${opt.sr}" ${opt.sr === role.defaultSr ? 'selected' : ''}>${opt.label}</option>`
+        ).join('');
+
+        div.innerHTML = `
+          <div class="flex items-center gap-2 min-w-[120px]">
+            <span class="text-base">${role.badge}</span>
+            <span class="text-sm font-bold text-slate-200">${role.name}</span>
+          </div>
+          <select id="${team}_${role.id}" onchange="calculateStats('${team}')" 
+                  class="bg-slate-800 border border-slate-700 text-white font-bold text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-ow-orange w-full">
+            ${optionsHtml}
+          </select>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    // SR数値から対応するランク文字列を取得
+    function getRankNameFromSR(sr) {
+      if (sr >= 5000) return "チャンピオン";
+      if (sr < 0) return "ブロンズ 5";
+
+      for (let i = ranks.length - 1; i >= 0; i--) {
+        if (sr >= ranks[i].base) {
+          const diff = sr - ranks[i].base;
+          const divOffset = Math.floor(diff / 100);
+          const div = Math.max(1, 5 - divOffset);
+          return `${ranks[i].name} ${div}`;
+        }
+      }
+      return "ブロンズ 5";
+    }
+
+    // 統計値の計算
+    function calculateStats(team) {
+      const playerSrs = roles.map(role => {
+        const select = document.getElementById(`${team}_${role.id}`);
+        return parseInt(select.value, 10);
+      });
+
+      // 平均値
+      const sum = playerSrs.reduce((a, b) => a + b, 0);
+      const avg = Math.round(sum / playerSrs.length);
+
+      // 中央値
+      const sorted = [...playerSrs].sort((a, b) => a - b);
+      const median = sorted[2]; // 5人要素の真ん中（3番目）
+
+      // 最高値・最低値
+      const max = Math.max(...playerSrs);
+      const min = Math.min(...playerSrs);
+      const spread = max - min;
+
+      // 画面描画
+      document.getElementById(`team${team}-avg-sr`).childNodes[0].nodeValue = `${avg} `;
+      document.getElementById(`team${team}-avg-rank`).textContent = `${getRankNameFromSR(avg)} 相当`;
+      document.getElementById(`team${team}-median`).textContent = median;
+      document.getElementById(`team${team}-max`).textContent = max;
+      document.getElementById(`team${team}-min`).textContent = min;
+      document.getElementById(`team${team}-spread-val`).textContent = spread;
+
+      if (currentMode === 'vs') {
+        updateVsSummary();
+      }
+    }
+
+    // VSモードの概要計算
+    function updateVsSummary() {
+      const getAvg = (team) => {
+        const srs = roles.map(role => parseInt(document.getElementById(`${team}_${role.id}`).value, 10));
+        return Math.round(srs.reduce((a, b) => a + b, 0) / srs.length);
+      };
+
+      const avgA = getAvg('A');
+      const avgB = getAvg('B');
+      const diff = Math.abs(avgA - avgB);
+
+      document.getElementById('vs-teamA-sr').textContent = avgA;
+      document.getElementById('vs-teamA-rank').textContent = `${getRankNameFromSR(avgA)} 相当`;
+
+      document.getElementById('vs-teamB-sr').textContent = avgB;
+      document.getElementById('vs-teamB-rank').textContent = `${getRankNameFromSR(avgB)} 相当`;
+
+      document.getElementById('vs-diff-sr').textContent = diff;
+
+      // バランス状態判定
+      const badge = document.getElementById('vs-status-badge');
+      if (diff <= 100) {
+        badge.className = "mt-2 px-4 py-1 rounded-full text-xs font-black tracking-widest uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/40";
+        badge.textContent = "VERY FAIR MATCH (非常に良い勝負)";
+      } else if (diff <= 250) {
+        badge.className = "mt-2 px-4 py-1 rounded-full text-xs font-black tracking-widest uppercase bg-blue-500/20 text-blue-400 border border-blue-500/40";
+        badge.textContent = "GOOD SCRIM (適正スクリム)";
+      } else {
+        badge.className = "mt-2 px-4 py-1 rounded-full text-xs font-black tracking-widest uppercase bg-amber-500/20 text-amber-400 border border-amber-500/40";
+        badge.textContent = "SR GAP DETECTED (格差あり)";
+      }
+    }
+
+    // 表示モード切り替え
+    function setMode(mode) {
+      currentMode = mode;
+      const btnSingle = document.getElementById('btn-single');
+      const btnVs = document.getElementById('btn-vs');
+      const cardB = document.getElementById('card-teamB');
+      const vsSummary = document.getElementById('vs-summary');
+      const titleA = document.getElementById('title-teamA');
+
+      if (mode === 'single') {
+        btnSingle.className = "px-4 py-1.5 rounded-md transition-all bg-ow-orange text-slate-950 shadow";
+        btnVs.className = "px-4 py-1.5 rounded-md transition-all text-slate-400 hover:text-white";
+        cardB.classList.add('hidden');
+        vsSummary.classList.add('hidden');
+        titleA.textContent = "チーム メンバー編成";
+      } else {
+        btnVs.className = "px-4 py-1.5 rounded-md transition-all bg-ow-orange text-slate-950 shadow";
+        btnSingle.className = "px-4 py-1.5 rounded-md transition-all text-slate-400 hover:text-white";
+        cardB.classList.remove('hidden');
+        vsSummary.classList.remove('hidden');
+        titleA.textContent = "TEAM A メンバー編成";
+        updateVsSummary();
+      }
+    }
+
+    // リセット処理
+    function resetTeam(team) {
+      roles.forEach(role => {
+        const select = document.getElementById(`${team}_${role.id}`);
+        select.value = role.defaultSr;
+      });
+      calculateStats(team);
+    }
+
+    // 開始
+    window.onload = init;
+  </script>
+</body>
+</html>

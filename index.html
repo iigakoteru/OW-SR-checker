@@ -24,7 +24,6 @@
       background: linear-gradient(135deg, #1e2638 0%, #171e2e 100%);
       border: 1px solid #2e3a52;
     }
-    /* Custom Scrollbar for Dropdown */
     .custom-scroll::-webkit-scrollbar {
       width: 6px;
     }
@@ -214,12 +213,13 @@
     });
     rankOptions.push({ label: "チャンピオン", sr: 5000, img: "images/champion.png", sub: "5000 SR" });
 
+    // ロール定義（画像パスを指定）
     const roles = [
-      { id: "tank", name: "タンク", badge: "🛡️", defaultSr: 2500 },
-      { id: "dps1", name: "DPS 1", badge: "⚔️", defaultSr: 2500 },
-      { id: "dps2", name: "DPS 2", badge: "⚔️", defaultSr: 2500 },
-      { id: "sup1", name: "サポート 1", badge: "💉", defaultSr: 2500 },
-      { id: "sup2", name: "サポート 2", badge: "💉", defaultSr: 2500 }
+      { id: "tank", name: "タンク", img: "images/tank.png", defaultSr: 2500 },
+      { id: "dps1", name: "DPS 1", img: "images/dps.png", defaultSr: 2500 },
+      { id: "dps2", name: "DPS 2", img: "images/dps.png", defaultSr: 2500 },
+      { id: "sup1", name: "サポート 1", img: "images/support.png", defaultSr: 2500 },
+      { id: "sup2", name: "サポート 2", img: "images/support.png", defaultSr: 2500 }
     ];
 
     let currentMode = 'single';
@@ -242,8 +242,8 @@
         const defaultOpt = rankOptions.find(opt => opt.sr === role.defaultSr) || rankOptions[0];
         
         row.innerHTML = `
-          <div class="flex items-center gap-2 min-w-[120px]">
-            <span class="text-base">${role.badge}</span>
+          <div class="flex items-center gap-2 min-w-[130px]">
+            <img src="${role.img}" class="w-6 h-6 object-contain" onerror="this.style.display='none'">
             <span class="text-sm font-bold text-slate-200">${role.name}</span>
           </div>
           
@@ -278,7 +278,6 @@
 
     function toggleDropdown(event, team, roleId) {
       event.stopPropagation();
-      // 他のすべてのドロップダウンを閉じる
       document.querySelectorAll("[id$='_dropdown']").forEach(el => {
         if (el.id !== `${team}_${roleId}_dropdown`) el.classList.add('hidden');
       });

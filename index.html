@@ -205,6 +205,19 @@
     </div>
   </main>
 
+  <!-- スマホ・タブレット（iOS Safari）対応 画像プレビューモーダル -->
+  <div id="imageModal" class="fixed inset-0 z-50 bg-black/80 flex flex-col items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-700 rounded-xl max-w-2xl w-full p-4 flex flex-col items-center shadow-2xl">
+      <div class="flex justify-between w-full items-center mb-3">
+        <span class="text-xs sm:text-sm font-bold text-ow-orange">📸 画像を長押しして「写真に追加」してください</span>
+        <button onclick="closeModal()" class="bg-slate-800 hover:bg-slate-700 text-white font-bold px-3 py-1 rounded text-sm transition">✕ 閉じる</button>
+      </div>
+      <div id="modalImageContainer" class="w-full overflow-auto max-h-[70vh] flex justify-center bg-slate-950 p-2 rounded">
+        <!-- 生成された画像がここに入ります -->
+      </div>
+    </div>
+  </div>
+
   <script>
     const ranks = [
       { name: "ブロンズ", img: "images/bronze.png", base: 0 },
@@ -421,7 +434,20 @@
       });
     }
 
-    // 単一チーム用スクショ（iPad/Safari対策：新タブで開いて長押し保存）
+    // モーダルを表示してスマホでも長押し保存できるようにする関数
+    function showImageModal(imageUrl) {
+      const modal = document.getElementById('imageModal');
+      const container = document.getElementById('modalImageContainer');
+      container.innerHTML = `<img src="${imageUrl}" class="max-w-full rounded shadow-lg" alt="Generated Screenshot">`;
+      modal.classList.remove('hidden');
+    }
+
+    function closeModal() {
+      const modal = document.getElementById('imageModal');
+      modal.classList.add('hidden');
+    }
+
+    // 単一チーム用スクショ（モーダル表示版）
     function takeScreenshot(team) {
       const cardElement = document.getElementById(`card-team${team}`);
       html2canvas(cardElement, {
@@ -430,30 +456,13 @@
         useCORS: true
       }).then(canvas => {
         const imageUrl = canvas.toDataURL('image/png');
-        
-        const link = document.createElement('a');
-        link.download = `OW2_Team_${team}_SR_Result.png`;
-        link.href = imageUrl;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-
-        setTimeout(() => {
-          const newWindow = window.open();
-          if (newWindow) {
-            newWindow.document.write(`
-              <body style="background:#0f141d; color:#fff; text-align:center; padding:20px; font-family:sans-serif;">
-                <p style="font-size:16px; margin-bottom:10px;">画像を長押しして「写真に追加」または「画像を保存」してください</p>
-                <img src="${imageUrl}" style="max-width:100%; height:auto; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.5);">
-              </body>
-            `);
-            newWindow.document.title = "OW2 Result (長押しで保存)";
-          }
-        }, 300);
+        showImageModal(imageUrl);
+      }).catch(err => {
+        alert("画像の生成に失敗しました: " + err);
       });
     }
 
-    // VS対戦比較モード用（iPad/Safari対策：新タブで開いて長押し保存）
+    // VS対戦比較モード用（モーダル表示版）
     function takeMatchScreenshot() {
       const summaryElement = document.getElementById('vs-summary');
       const wrapperElement = document.getElementById('teams-wrapper');
@@ -484,26 +493,10 @@
       }).then(canvas => {
         document.body.removeChild(container);
         const imageUrl = canvas.toDataURL('image/png');
-
-        const link = document.createElement('a');
-        link.download = `OW2_Scrim_Match_Analysis.png`;
-        link.href = imageUrl;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-
-        setTimeout(() => {
-          const newWindow = window.open();
-          if (newWindow) {
-            newWindow.document.write(`
-              <body style="background:#0f141d; color:#fff; text-align:center; padding:20px; font-family:sans-serif;">
-                <p style="font-size:16px; margin-bottom:10px;">画像を長押しして「写真に追加」または「画像を保存」してください</p>
-                <img src="${imageUrl}" style="max-width:100%; height:auto; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.5);">
-              </body>
-            `);
-            newWindow.document.title = "OW2 Match Analysis (長押しで保存)";
-          }
-        }, 300);
+        showImageModal(imageUrl);
+      }).catch(err => {
+        if (container.parentNode) document.body.removeChild(container);
+        alert("画像の生成に失敗しました: " + err);
       });
     }
 

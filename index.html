@@ -24,9 +24,20 @@
       background: linear-gradient(135deg, #1e2638 0%, #171e2e 100%);
       border: 1px solid #2e3a52;
     }
+    /* Custom Scrollbar for Dropdown */
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: #0f141d;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #2e3a52;
+      border-radius: 3px;
+    }
   </style>
 </head>
-<body class="min-h-screen pb-12">
+<body class="min-h-screen pb-12" onclick="closeAllDropdowns(event)">
 
   <!-- Header -->
   <header class="bg-slate-900 border-b border-slate-800 py-4 px-6 mb-8 shadow-lg">
@@ -56,14 +67,12 @@
     <div id="vs-summary" class="hidden mb-8 ow-card p-6 rounded-xl border-2 border-ow-orange shadow-2xl">
       <h2 class="text-xl font-black text-center mb-4 italic tracking-wider text-slate-300">MATCH BALANCING (対戦分析)</h2>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
-        <!-- Team A SR -->
         <div class="text-center p-4 bg-slate-900/60 rounded-lg border border-slate-800">
           <div class="text-xs text-blue-400 font-bold uppercase tracking-wider mb-1">TEAM A 平均SR</div>
           <div id="vs-teamA-sr" class="ow-font text-5xl font-bold text-white leading-none">0</div>
           <div id="vs-teamA-rank" class="text-sm font-bold text-slate-400 mt-1">-</div>
         </div>
 
-        <!-- Differential & Status -->
         <div class="text-center flex flex-col items-center justify-center">
           <div class="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">平均SR差</div>
           <div id="vs-diff-sr" class="ow-font text-6xl font-bold ow-orange leading-none">0</div>
@@ -72,7 +81,6 @@
           </div>
         </div>
 
-        <!-- Team B SR -->
         <div class="text-center p-4 bg-slate-900/60 rounded-lg border border-slate-800">
           <div class="text-xs text-red-400 font-bold uppercase tracking-wider mb-1">TEAM B 平均SR</div>
           <div id="vs-teamB-sr" class="ow-font text-5xl font-bold text-white leading-none">0</div>
@@ -97,9 +105,7 @@
         </div>
 
         <!-- Players Input -->
-        <div class="space-y-4 mb-6" id="players-teamA">
-          <!-- JSで動的生成 -->
-        </div>
+        <div class="space-y-4 mb-6" id="players-teamA"></div>
 
         <!-- Team A Stats Results -->
         <div class="bg-slate-950/80 rounded-lg p-5 border border-slate-800/80 space-y-4">
@@ -145,9 +151,7 @@
         </div>
 
         <!-- Players Input -->
-        <div class="space-y-4 mb-6" id="players-teamB">
-          <!-- JSで動的生成 -->
-        </div>
+        <div class="space-y-4 mb-6" id="players-teamB"></div>
 
         <!-- Team B Stats Results -->
         <div class="bg-slate-950/80 rounded-lg p-5 border border-slate-800/80 space-y-4">
@@ -166,7 +170,7 @@
             </div>
             <div class="bg-slate-900/80 p-2.5 rounded border border-slate-800">
               <span class="text-[10px] font-bold text-slate-400 block uppercase">最高 (Max)</span>
-              <span id="teamB-min" class="ow-font text-2xl font-bold text-emerald-400">0</span>
+              <span id="teamB-max" class="ow-font text-2xl font-bold text-emerald-400">0</span>
             </div>
             <div class="bg-slate-900/80 p-2.5 rounded border border-slate-800">
               <span class="text-[10px] font-bold text-slate-400 block uppercase">最低 (Min)</span>
@@ -184,45 +188,42 @@
   </main>
 
   <script>
-    // ランク・ディビジョン定義データ生成
     const ranks = [
-      { name: "ブロンズ", base: 0 },
-      { name: "シルバー", base: 1500 },
-      { name: "ゴールド", base: 2000 },
-      { name: "プラチナ", base: 2500 },
-      { name: "エメラルド", base: 3000 },
-      { name: "ダイヤモンド", base: 3500 },
-      { name: "マスター", base: 4000 },
-      { name: "グランドマスター", base: 4500 }
+      { name: "ブロンズ", img: "images/bronze.png", base: 0 },
+      { name: "シルバー", img: "images/silver.png", base: 1500 },
+      { name: "ゴールド", img: "images/gold.png", base: 2000 },
+      { name: "プラチナ", img: "images/platinum.png", base: 2500 },
+      { name: "エメラルド", img: "images/emerald.png", base: 3000 },
+      { name: "ダイヤモンド", img: "images/diamond.png", base: 3500 },
+      { name: "マスター", img: "images/master.png", base: 4000 },
+      { name: "グランドマスター", img: "images/grandmaster.png", base: 4500 }
     ];
 
     const rankOptions = [];
 
-    // ブロンズ5〜グラマス1を生成
     ranks.forEach(r => {
       for (let div = 5; div >= 1; div--) {
         const sr = r.base + (5 - div) * 100;
         rankOptions.push({
-          label: `${r.name} ${div} (${sr} SR)`,
-          sr: sr
+          label: `${r.name} ${div}`,
+          sr: sr,
+          img: r.img,
+          sub: `${sr} SR`
         });
       }
     });
-    // チャンピオンを追加
-    rankOptions.push({ label: "チャンピオン (5000 SR)", sr: 5000 });
+    rankOptions.push({ label: "チャンピオン", sr: 5000, img: "images/champion.png", sub: "5000 SR" });
 
-    // ロール定義
     const roles = [
-      { id: "tank", name: "タンク", badge: "🛡️", defaultSr: 2500 }, // プラチナ5
+      { id: "tank", name: "タンク", badge: "🛡️", defaultSr: 2500 },
       { id: "dps1", name: "DPS 1", badge: "⚔️", defaultSr: 2500 },
       { id: "dps2", name: "DPS 2", badge: "⚔️", defaultSr: 2500 },
       { id: "sup1", name: "サポート 1", badge: "💉", defaultSr: 2500 },
       { id: "sup2", name: "サポート 2", badge: "💉", defaultSr: 2500 }
     ];
 
-    let currentMode = 'single'; // 'single' or 'vs'
+    let currentMode = 'single';
 
-    // アプリ初期化
     function init() {
       renderTeamInputs('A');
       renderTeamInputs('B');
@@ -230,34 +231,75 @@
       calculateStats('B');
     }
 
-    // プレイヤー入力UI生成
     function renderTeamInputs(team) {
       const container = document.getElementById(`players-team${team}`);
       container.innerHTML = '';
 
       roles.forEach(role => {
-        const div = document.createElement('div');
-        div.className = 'flex items-center justify-between gap-3 bg-slate-900/60 p-3 rounded-lg border border-slate-800';
+        const row = document.createElement('div');
+        row.className = 'flex items-center justify-between gap-3 bg-slate-900/60 p-3 rounded-lg border border-slate-800 relative';
         
-        const optionsHtml = rankOptions.map(opt => 
-          `<option value="${opt.sr}" ${opt.sr === role.defaultSr ? 'selected' : ''}>${opt.label}</option>`
-        ).join('');
-
-        div.innerHTML = `
+        const defaultOpt = rankOptions.find(opt => opt.sr === role.defaultSr) || rankOptions[0];
+        
+        row.innerHTML = `
           <div class="flex items-center gap-2 min-w-[120px]">
             <span class="text-base">${role.badge}</span>
             <span class="text-sm font-bold text-slate-200">${role.name}</span>
           </div>
-          <select id="${team}_${role.id}" onchange="calculateStats('${team}')" 
-                  class="bg-slate-800 border border-slate-700 text-white font-bold text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-ow-orange w-full">
-            ${optionsHtml}
-          </select>
+          
+          <!-- Custom Dropdown Container -->
+          <div class="relative w-full" data-team="${team}" data-role="${role.id}">
+            <input type="hidden" id="${team}_${role.id}" value="${defaultOpt.sr}" onchange="calculateStats('${team}')">
+            
+            <button type="button" onclick="toggleDropdown(event, '${team}', '${role.id}')" 
+                    class="w-full bg-slate-800 border border-slate-700 text-white font-bold text-sm rounded-lg px-3 py-2 flex items-center justify-between hover:border-ow-orange focus:outline-none">
+              <span class="flex items-center gap-2" id="${team}_${role.id}_selected">
+                <img src="${defaultOpt.img}" class="w-5 h-5 object-contain" onerror="this.style.display='none'">
+                <span>${defaultOpt.label} (${defaultOpt.sub})</span>
+              </span>
+              <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </button>
+
+            <div id="${team}_${role.id}_dropdown" class="hidden absolute z-50 mt-1 w-full bg-slate-900 border border-slate-700 rounded-lg shadow-2xl max-h-60 overflow-y-auto custom-scroll">
+              ${rankOptions.map(opt => `
+                <div onclick="selectRank('${team}', '${role.id}', ${opt.sr}, '${opt.label}', '${opt.sub}', '${opt.img}')" 
+                     class="flex items-center gap-2 px-3 py-2 hover:bg-slate-800 cursor-pointer text-sm font-bold text-slate-200 border-b border-slate-800/50">
+                  <img src="${opt.img}" class="w-5 h-5 object-contain" onerror="this.style.display='none'">
+                  <span>${opt.label}</span>
+                  <span class="ml-auto text-xs text-slate-400">${opt.sub}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
         `;
-        container.appendChild(div);
+        container.appendChild(row);
       });
     }
 
-    // SR数値から対応するランク文字列を取得
+    function toggleDropdown(event, team, roleId) {
+      event.stopPropagation();
+      // 他のすべてのドロップダウンを閉じる
+      document.querySelectorAll("[id$='_dropdown']").forEach(el => {
+        if (el.id !== `${team}_${roleId}_dropdown`) el.classList.add('hidden');
+      });
+      const dropdown = document.getElementById(`${team}_${roleId}_dropdown`);
+      dropdown.classList.toggle('hidden');
+    }
+
+    function closeAllDropdowns(event) {
+      document.querySelectorAll("[id$='_dropdown']").forEach(el => el.classList.add('hidden'));
+    }
+
+    function selectRank(team, roleId, sr, label, sub, img) {
+      document.getElementById(`${team}_${roleId}`).value = sr;
+      document.getElementById(`${team}_${roleId}_selected`).innerHTML = `
+        <img src="${img}" class="w-5 h-5 object-contain" onerror="this.style.display='none'">
+        <span>${label} (${sub})</span>
+      `;
+      document.getElementById(`${team}_${roleId}_dropdown`).classList.add('hidden');
+      calculateStats(team);
+    }
+
     function getRankNameFromSR(sr) {
       if (sr >= 5000) return "チャンピオン";
       if (sr < 0) return "ブロンズ 5";
@@ -273,27 +315,22 @@
       return "ブロンズ 5";
     }
 
-    // 統計値の計算
     function calculateStats(team) {
       const playerSrs = roles.map(role => {
-        const select = document.getElementById(`${team}_${role.id}`);
-        return parseInt(select.value, 10);
+        const input = document.getElementById(`${team}_${role.id}`);
+        return parseInt(input.value, 10);
       });
 
-      // 平均値
       const sum = playerSrs.reduce((a, b) => a + b, 0);
       const avg = Math.round(sum / playerSrs.length);
 
-      // 中央値
       const sorted = [...playerSrs].sort((a, b) => a - b);
-      const median = sorted[2]; // 5人要素の真ん中（3番目）
+      const median = sorted[2];
 
-      // 最高値・最低値
       const max = Math.max(...playerSrs);
       const min = Math.min(...playerSrs);
       const spread = max - min;
 
-      // 画面描画
       document.getElementById(`team${team}-avg-sr`).childNodes[0].nodeValue = `${avg} `;
       document.getElementById(`team${team}-avg-rank`).textContent = `${getRankNameFromSR(avg)} 相当`;
       document.getElementById(`team${team}-median`).textContent = median;
@@ -306,7 +343,6 @@
       }
     }
 
-    // VSモードの概要計算
     function updateVsSummary() {
       const getAvg = (team) => {
         const srs = roles.map(role => parseInt(document.getElementById(`${team}_${role.id}`).value, 10));
@@ -325,7 +361,6 @@
 
       document.getElementById('vs-diff-sr').textContent = diff;
 
-      // バランス状態判定
       const badge = document.getElementById('vs-status-badge');
       if (diff <= 100) {
         badge.className = "mt-2 px-4 py-1 rounded-full text-xs font-black tracking-widest uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/40";
@@ -339,7 +374,6 @@
       }
     }
 
-    // 表示モード切り替え
     function setMode(mode) {
       currentMode = mode;
       const btnSingle = document.getElementById('btn-single');
@@ -364,16 +398,13 @@
       }
     }
 
-    // リセット処理
     function resetTeam(team) {
       roles.forEach(role => {
-        const select = document.getElementById(`${team}_${role.id}`);
-        select.value = role.defaultSr;
+        const defaultOpt = rankOptions.find(opt => opt.sr === role.defaultSr);
+        selectRank(team, role.id, defaultOpt.sr, defaultOpt.label, defaultOpt.sub, defaultOpt.img);
       });
-      calculateStats(team);
     }
 
-    // 開始
     window.onload = init;
   </script>
 </body>

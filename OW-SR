@@ -1,0 +1,132 @@
+import tkinter as tk
+from tkinter import ttk
+
+# ランク定義
+RANKS = [
+    ("ブロンズ", 0),
+    ("シルバー", 1500),
+    ("ゴールド", 2000),
+    ("プラチナ", 2500),
+    ("エメラルド", 3000),
+    ("ダイヤモンド", 3500),
+    ("マスター", 4000),
+    ("グランドマスター", 4500),
+]
+
+# 選択肢データの生成 (ブロンズ5〜グラマス1, チャンピオン)
+RANK_OPTIONS = []
+for name, base in RANKS:
+    for div in range(5, 0, -1):
+        sr = base + (5 - div) * 100
+        RANK_OPTIONS.append((f"{name} {div} ({sr} SR)", sr))
+RANK_OPTIONS.append(("チャンピオン (5000 SR)", 5000))
+
+# ロール定義
+ROLES = [
+    ("🛡️ タンク", 2500),
+    ("⚔️ DPS 1", 2500),
+    ("⚔️ DPS 2", 2500),
+    ("💉 サポート 1", 2500),
+    ("💉 サポート 2", 2500),
+]
+
+def sr_to_rank_name(sr):
+    if sr >= 5000:
+        return "チャンピオン"
+    if sr < 0:
+        return "ブロンズ 5"
+    for name, base in reversed(RANKS):
+        if sr >= base:
+            diff = sr - base
+            div = max(1, 5 - (diff // 100))
+            return f"{name} {div}"
+    return "ブロンズ 5"
+
+class SRCalculatorApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Overwatch スクリム SR 計算ソフト")
+        self.root.geometry("450x520")
+        self.root.resizable(False, False)
+        
+        # デザイン設定
+        style = ttk.Style()
+        style.theme_use("clam")
+        
+        # タイトル
+        title_label = tk.Label(
+            root, text="OVERWATCH SCRIM SR CALCULATOR", 
+            font=("Helvetica", 14, "bold"), bg="#1e2638", fg="#f99e1a", py=10
+        )
+        title_label.pack(fill="x")
+
+        # プレイヤー入力フレーム
+        input_frame = tk.LabelFrame(root, text=" メンバーのランク選択 ", font=("Helvetica", 10, "bold"), padx=15, pady=10)
+        input_frame.pack(fill="x", padx=15, pady=10)
+
+        self.combos = []
+        for i, (role_name, default_sr) in enumerate(ROLES):
+            row = tk.Frame(input_frame)
+            row.pack(fill="x", pady=4)
+            
+            lbl = tk.Label(row, text=role_name, width=14, anchor="w", font=("Helvetica", 10, "bold"))
+            lbl.pack(side="left")
+            
+            combo = ttk.Combobox(row, state="readonly", values=[opt[0] for opt in RANK_OPTIONS], width=25)
+            # 初期値（プラチナ5 = 2500SR）
+            default_index = [opt[1] for opt in RANK_OPTIONS].index(default_sr)
+            combo.current(default_index)
+            combo.bind("<<ComboboxSelected>>", self.calculate)
+            combo.pack(side="right", fill="x", expand=True)
+            
+            self.combos.append(combo)
+
+        # 結果表示エリア
+        result_frame = tk.LabelFrame(root, text=" 計算結果 ", font=("Helvetica", 10, "bold"), padx=15, pady=10)
+        result_frame.pack(fill="both", expand=True, padx=15, pady=5)
+
+        self.lbl_avg = tk.Label(result_frame, text="チーム平均 SR: -", font=("Helvetica", 13, "bold"), fg="#f99e1a")
+        self.lbl_avg.pack(anchor="w", pady=3)
+
+        self.lbl_median = tk.Label(result_frame, text="中央値 SR: -", font=("Helvetica", 11))
+        self.lbl_median.pack(anchor="w", pady=2)
+
+        self.lbl_max = tk.Label(result_frame, text="最高 SR: -", font=("Helvetica", 11))
+        self.lbl_max.pack(anchor="w", pady=2)
+
+        self.lbl_min = tk.Label(result_frame, text="最低 SR: -", font=("Helvetica", 11))
+        self.lbl_min.pack(anchor="w", pady=2)
+
+        self.lbl_spread = tk.Label(result_frame, text="チーム内SR格差: -", font=("Helvetica", 10, "italic"), fg="#888888")
+        self.lbl_spread.pack(anchor="w", pady=5)
+
+        # 初回計算
+        self.calculate()
+
+    def calculate(self, event=None):
+        srs = []
+        for combo in self.combos:
+            idx = combo.current()
+            srs.append(RANK_OPTIONS[idx][1])
+
+        # 統計計算
+        avg_sr = round(sum(srs) / len(srs))
+        sorted_srs = sorted(srs)
+        median_sr = sorted_srs[2]
+        max_sr = sorted_srs[-1]
+        min_sr = sorted_srs[0]
+        spread = max_sr - min_sr
+
+        avg_rank_str = sr_to_rank_name(avg_sr)
+
+        # 表示更新
+        self.lbl_avg.config(text=f"チーム平均 SR:  {avg_sr} SR  ({avg_rank_str} 相当)")
+        self.lbl_median.config(text=f"中央値 SR:  {median_sr} SR")
+        self.lbl_max.config(text=f"最高 SR:  {max_sr} SR")
+        self.lbl_min.config(text=f"最低 SR:  {min_sr} SR")
+        self.lbl_spread.config(text=f"チーム内SR格差（最大-最低）:  {spread} SR")
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = SRCalculatorApp(root)
+    root.mainloop()

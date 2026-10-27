@@ -97,7 +97,7 @@
       </div>
     </div>
 
-    <!-- Teams Container (全体をVS保存するときに一緒にキャプチャできるようにラッパーIDを付与) -->
+    <!-- Teams Container -->
     <div id="teams-wrapper" class="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
       <!-- TEAM A -->
@@ -108,7 +108,7 @@
             <h2 id="title-teamA" class="text-xl font-black italic tracking-wide text-white">TEAM A メンバー編成</h2>
           </div>
           <div class="flex items-center gap-2">
-            <button id="btn-screenshot-A" onclick="takeScreenshot('A')" class="text-xs font-bold text-emerald-400 hover:text-emerald-300 bg-emerald-950/60 hover:bg-emerald-900/60 border border-emerald-600/50 px-3 py-1.5 rounded transition flex items-center gap-1">
+            <button onclick="takeScreenshot('A')" class="text-xs font-bold text-emerald-400 hover:text-emerald-300 bg-emerald-950/60 hover:bg-emerald-900/60 border border-emerald-600/50 px-3 py-1.5 rounded transition flex items-center gap-1">
               📸 画像保存
             </button>
             <button onclick="resetTeam('A')" class="text-xs font-bold text-slate-400 hover:text-slate-200 bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded transition">
@@ -397,7 +397,6 @@
       const cardB = document.getElementById('card-teamB');
       const vsSummaryContainer = document.getElementById('vs-summary-container');
       const titleA = document.getElementById('title-teamA');
-      const btnScreenshotA = document.getElementById('btn-screenshot-A');
 
       if (mode === 'single') {
         btnSingle.className = "px-4 py-1.5 rounded-md transition-all bg-ow-orange text-slate-950 shadow";
@@ -405,14 +404,12 @@
         cardB.classList.add('hidden');
         vsSummaryContainer.classList.add('hidden');
         titleA.textContent = "チーム メンバー編成";
-        btnScreenshotA.style.display = "flex";
       } else {
         btnVs.className = "px-4 py-1.5 rounded-md transition-all bg-ow-orange text-slate-950 shadow";
         btnSingle.className = "px-4 py-1.5 rounded-md transition-all text-slate-400 hover:text-white";
         cardB.classList.remove('hidden');
         vsSummaryContainer.classList.remove('hidden');
         titleA.textContent = "TEAM A メンバー編成";
-        btnScreenshotA.style.display = "none"; // VSモード時は全体の保存ボタンを使うため非表示
         updateVsSummary();
       }
     }
@@ -441,25 +438,21 @@
 
     // VS対戦比較モード用（対戦分析エリア ＋ チームA・B全体を1枚にキャプチャ）
     function takeMatchScreenshot() {
-      // 一時的にボタンなどを隠したい場合はここで処理可能ですが、今回はそのまま綺麗にキャプチャします
       const summaryElement = document.getElementById('vs-summary');
       const wrapperElement = document.getElementById('teams-wrapper');
 
-      // 2つの要素を同時に綺麗にキャプチャするため、一時的なラッパーを作成してhtml2canvasに渡す
       const container = document.createElement('div');
       container.style.backgroundColor = '#0f141d';
       container.style.padding = '24px';
       container.style.width = '1200px';
       
       const cloneSummary = summaryElement.cloneNode(true);
-      // キャプチャ画像の中に「📸 MATCH全体を画像保存」ボタンが写り込まないようにクローンから削除
       const btnInClone = cloneSummary.querySelector('button');
       if (btnInClone) btnInClone.remove();
 
       const cloneWrapper = wrapperElement.cloneNode(true);
 
       container.appendChild(cloneSummary);
-      // 余白調整
       const spacer = document.createElement('div');
       spacer.style.height = '24px';
       container.appendChild(spacer);

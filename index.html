@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Overwatch 2 スクリム SR 計算・対戦分析ツール</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- html2canvasライブラリの読み込み -->
+  <!-- html2canvasライブラリの読み込み（画像保存機能用） -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Teko:wght@600;700&family=Noto+Sans+JP:wght@400;700;900&display=swap');
@@ -97,7 +97,7 @@
       </div>
     </div>
 
-    <!-- Teams Container (全体をVS保存するときに一緒にキャプチャできるようにラッパーIDを付与) -->
+    <!-- Teams Container -->
     <div id="teams-wrapper" class="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
       <!-- TEAM A -->
@@ -412,7 +412,7 @@
         cardB.classList.remove('hidden');
         vsSummaryContainer.classList.remove('hidden');
         titleA.textContent = "TEAM A メンバー編成";
-        btnScreenshotA.style.display = "none"; // VSモード時は全体の保存ボタンを使うため非表示
+        btnScreenshotA.style.display = "none";
         updateVsSummary();
       }
     }
@@ -424,12 +424,11 @@
       });
     }
 
-    // 単一チーム用スクショ
     function takeScreenshot(team) {
       const cardElement = document.getElementById(`card-team${team}`);
       html2canvas(cardElement, {
         backgroundColor: '#131b2e',
-        scale: 2,
+        scale: 3,
         useCORS: true
       }).then(canvas => {
         const link = document.createElement('a');
@@ -439,27 +438,22 @@
       });
     }
 
-    // VS対戦比較モード用（対戦分析エリア ＋ チームA・B全体を1枚にキャプチャ）
     function takeMatchScreenshot() {
-      // 一時的にボタンなどを隠したい場合はここで処理可能ですが、今回はそのまま綺麗にキャプチャします
       const summaryElement = document.getElementById('vs-summary');
       const wrapperElement = document.getElementById('teams-wrapper');
 
-      // 2つの要素を同時に綺麗にキャプチャするため、一時的なラッパーを作成してhtml2canvasに渡す
       const container = document.createElement('div');
       container.style.backgroundColor = '#0f141d';
       container.style.padding = '24px';
       container.style.width = '1200px';
       
       const cloneSummary = summaryElement.cloneNode(true);
-      // キャプチャ画像の中に「📸 MATCH全体を画像保存」ボタンが写り込まないようにクローンから削除
       const btnInClone = cloneSummary.querySelector('button');
       if (btnInClone) btnInClone.remove();
 
       const cloneWrapper = wrapperElement.cloneNode(true);
 
       container.appendChild(cloneSummary);
-      // 余白調整
       const spacer = document.createElement('div');
       spacer.style.height = '24px';
       container.appendChild(spacer);
@@ -469,7 +463,7 @@
 
       html2canvas(container, {
         backgroundColor: '#0f141d',
-        scale: 2,
+        scale: 3,
         useCORS: true
       }).then(canvas => {
         document.body.removeChild(container);

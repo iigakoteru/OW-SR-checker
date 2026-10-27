@@ -424,20 +424,38 @@
       });
     }
 
+    // iPad Safari対応版：単一チームスクショ
     function takeScreenshot(team) {
       const cardElement = document.getElementById(`card-team${team}`);
       html2canvas(cardElement, {
         backgroundColor: '#131b2e',
-        scale: 3,
-        useCORS: true
+        scale: 2,
+        useCORS: true,
+        allowTaint: true
       }).then(canvas => {
+        const imageUrl = canvas.toDataURL('image/png');
+        
         const link = document.createElement('a');
         link.download = `OW2_Team_${team}_SR_Result.png`;
-        link.href = canvas.toDataURL('image/png');
+        link.href = imageUrl;
+        
+        document.body.appendChild(link);
         link.click();
+        document.body.removeChild(link);
+
+        setTimeout(() => {
+          const newWindow = window.open();
+          if (newWindow) {
+            newWindow.document.write(`<img src="${imageUrl}" style="max-width:100%;height:auto;" alt="SR Result">`);
+            newWindow.document.title = "OW2 SR Result (長押しで保存)";
+          }
+        }, 300);
+      }).catch(err => {
+        alert("画像の生成に失敗しました: " + err);
       });
     }
 
+    // iPad Safari対応版：VS対戦比較モード用スクショ
     function takeMatchScreenshot() {
       const summaryElement = document.getElementById('vs-summary');
       const wrapperElement = document.getElementById('teams-wrapper');
@@ -463,15 +481,31 @@
 
       html2canvas(container, {
         backgroundColor: '#0f141d',
-        scale: 3,
-        useCORS: true
+        scale: 2,
+        useCORS: true,
+        allowTaint: true
       }).then(canvas => {
         document.body.removeChild(container);
+        const imageUrl = canvas.toDataURL('image/png');
 
         const link = document.createElement('a');
         link.download = `OW2_Scrim_Match_Analysis.png`;
-        link.href = canvas.toDataURL('image/png');
+        link.href = imageUrl;
+
+        document.body.appendChild(link);
         link.click();
+        document.body.removeChild(link);
+
+        setTimeout(() => {
+          const newWindow = window.open();
+          if (newWindow) {
+            newWindow.document.write(`<img src="${imageUrl}" style="max-width:100%;height:auto;" alt="Scrim Match Analysis">`);
+            newWindow.document.title = "OW2 Match Analysis (長押しで保存)";
+          }
+        }, 300);
+      }).catch(err => {
+        if (container.parentNode) document.body.removeChild(container);
+        alert("画像の生成に失敗しました: " + err);
       });
     }
 

@@ -421,7 +421,7 @@
       });
     }
 
-    // 単一チーム用スクショ
+    // 単一チーム用スクショ（iPad/Safari対策：新タブで開いて長押し保存）
     function takeScreenshot(team) {
       const cardElement = document.getElementById(`card-team${team}`);
       html2canvas(cardElement, {
@@ -429,14 +429,31 @@
         scale: 2,
         useCORS: true
       }).then(canvas => {
+        const imageUrl = canvas.toDataURL('image/png');
+        
         const link = document.createElement('a');
         link.download = `OW2_Team_${team}_SR_Result.png`;
-        link.href = canvas.toDataURL('image/png');
+        link.href = imageUrl;
+        document.body.appendChild(link);
         link.click();
+        document.body.removeChild(link);
+
+        setTimeout(() => {
+          const newWindow = window.open();
+          if (newWindow) {
+            newWindow.document.write(`
+              <body style="background:#0f141d; color:#fff; text-align:center; padding:20px; font-family:sans-serif;">
+                <p style="font-size:16px; margin-bottom:10px;">画像を長押しして「写真に追加」または「画像を保存」してください</p>
+                <img src="${imageUrl}" style="max-width:100%; height:auto; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.5);">
+              </body>
+            `);
+            newWindow.document.title = "OW2 Result (長押しで保存)";
+          }
+        }, 300);
       });
     }
 
-    // VS対戦比較モード用（対戦分析エリア ＋ チームA・B全体を1枚にキャプチャ）
+    // VS対戦比較モード用（iPad/Safari対策：新タブで開いて長押し保存）
     function takeMatchScreenshot() {
       const summaryElement = document.getElementById('vs-summary');
       const wrapperElement = document.getElementById('teams-wrapper');
@@ -466,11 +483,27 @@
         useCORS: true
       }).then(canvas => {
         document.body.removeChild(container);
+        const imageUrl = canvas.toDataURL('image/png');
 
         const link = document.createElement('a');
         link.download = `OW2_Scrim_Match_Analysis.png`;
-        link.href = canvas.toDataURL('image/png');
+        link.href = imageUrl;
+        document.body.appendChild(link);
         link.click();
+        document.body.removeChild(link);
+
+        setTimeout(() => {
+          const newWindow = window.open();
+          if (newWindow) {
+            newWindow.document.write(`
+              <body style="background:#0f141d; color:#fff; text-align:center; padding:20px; font-family:sans-serif;">
+                <p style="font-size:16px; margin-bottom:10px;">画像を長押しして「写真に追加」または「画像を保存」してください</p>
+                <img src="${imageUrl}" style="max-width:100%; height:auto; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.5);">
+              </body>
+            `);
+            newWindow.document.title = "OW2 Match Analysis (長押しで保存)";
+          }
+        }, 300);
       });
     }
 

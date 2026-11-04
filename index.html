@@ -1,530 +1,199 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Overwatch 2 スクリム SR 計算・対戦分析ツール</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- html2canvasライブラリの読み込み -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Teko:wght@600;700&family=Noto+Sans+JP:wght@400;700;900&display=swap');
-    
-    body {
-      font-family: 'Noto Sans JP', sans-serif;
-      background-color: #0f141d;
-      color: #f1f5f9;
-    }
-    .ow-font {
-      font-family: 'Teko', sans-serif;
-      letter-spacing: 1px;
-    }
-    .ow-orange { color: #f99e1a; }
-    .bg-ow-orange { background-color: #f99e1a; }
-    .border-ow-orange { border-color: #f99e1a; }
-    .ow-card {
-      background: linear-gradient(135deg, #1e2638 0%, #171e2e 100%);
-      border: 1px solid #2e3a52;
-    }
-    .custom-scroll::-webkit-scrollbar {
-      width: 6px;
-    }
-    .custom-scroll::-webkit-scrollbar-track {
-      background: #0f141d;
-    }
-    .custom-scroll::-webkit-scrollbar-thumb {
-      background: #2e3a52;
-      border-radius: 3px;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>OW2 スクリムSR計算ツール</title>
+<link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;700&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+:root{--bg:#f2f4f9;--surface:#fff;--s2:#eef1f8;--line:#d9dfec;--text:#18203a;--muted:#5d6985;--accent:#d97f00;--a:#2f7de1;--b:#e0485a;--ok:#12935a;--warn:#c27a00;color-scheme:light;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1a2e;--surface:#1a2742;--s2:#233459;--line:#375080;--text:#eef1f8;--muted:#93a0bd;--accent:#f99e1a;--a:#5aa3ff;--b:#ff6677;--ok:#3ddc97;--warn:#ffb340;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1a2e;--surface:#1a2742;--s2:#233459;--line:#375080;--text:#eef1f8;--muted:#93a0bd;--accent:#f99e1a;--a:#5aa3ff;--b:#ff6677;--ok:#3ddc97;--warn:#ffb340;color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 'Noto Sans JP',system-ui,sans-serif;padding:0 14px 48px}
+.num{font-family:'Teko',sans-serif;letter-spacing:.5px}
+header{margin:0 -14px 20px;padding:16px 14px 14px;background:linear-gradient(180deg,#16233f,#0f1a2e);border-bottom:1px solid rgba(255,255,255,.1);position:relative;overflow:hidden;color:#fff}
+header::before{content:"";position:absolute;inset:0;background:radial-gradient(60% 130% at 0% 0%,rgba(79,160,255,.2),transparent 70%);pointer-events:none}
+.hin{max-width:1100px;margin:0 auto;display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between;position:relative}
+.brand{display:flex;align-items:center;gap:14px}
+.logo{flex:none;filter:drop-shadow(0 0 6px rgba(249,158,26,.35))}
+.eb{display:block;font:500 12px/1 'Teko',sans-serif;letter-spacing:.34em;color:var(--accent);margin-bottom:7px}
+h1{margin:0;font:500 26px/1 'Teko',sans-serif;letter-spacing:.14em;text-transform:uppercase}
+h1 em{font-style:normal;color:var(--accent)}
+h1 small{display:block;font:400 11px 'Noto Sans JP',sans-serif;letter-spacing:.04em;font-style:normal;text-transform:none;color:#bcd8f5;margin-top:6px}
+header .seg{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.18)}
+header .seg button{color:#c3cdea}
+header .seg button.on{color:#1a1200}
+.seg{display:flex;background:var(--s2);border:1px solid var(--line);border-radius:10px;padding:3px}
+.seg button{border:0;background:none;color:var(--muted);font:700 13px inherit;font-family:inherit;padding:7px 14px;border-radius:8px;cursor:pointer}
+.seg button.on{background:var(--accent);color:#1a1200}
+main{max-width:1100px;margin:0 auto}
+#stage{padding:2px}
+.vs{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px 18px;margin-bottom:16px;box-shadow:0 8px 24px rgba(0,0,0,.12)}
+.vs-head{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;text-align:center}
+.vs .big{font-size:52px;line-height:1}
+.lbl{font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--muted)}
+.badge{display:inline-block;margin-top:6px;padding:3px 12px;border-radius:99px;font-size:12px;font-weight:900;border:1px solid currentColor}
+.prob{margin:16px 0 4px;height:10px;border-radius:99px;overflow:hidden;display:flex;background:var(--s2)}
+.prob i{display:block;height:100%}
+.probt{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);font-weight:700}
+.mu{margin-top:14px;display:grid;gap:6px}
+.mu div{display:grid;grid-template-columns:70px 1fr 56px 1fr 70px;gap:8px;align-items:center;font-size:12px;font-weight:700}
+.mu .l{text-align:right}.mu .r{text-align:left}
+.mu .bar{height:8px;background:var(--s2);border-radius:4px;position:relative;overflow:hidden}
+.mu .bar i{position:absolute;top:0;bottom:0;border-radius:4px}
+.teams{display:grid;gap:16px;grid-template-columns:1fr}
+.teams.two{grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:inset 0 2px 0 var(--tc,var(--accent)),0 8px 24px rgba(0,0,0,.12)}
+.ch{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.ch h2{margin:0;font-size:17px;font-weight:900}
+.btn{border:1px solid var(--line);background:var(--s2);color:var(--text);font:700 12px inherit;font-family:inherit;padding:6px 11px;border-radius:8px;cursor:pointer}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:#1a1200}
+.row{display:grid;grid-template-columns:100px 1fr 1fr 62px 52px;gap:6px;align-items:center;padding:8px 10px;margin-bottom:6px;background:var(--s2);border-radius:8px;border-left:3px solid var(--c)}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:7px;vertical-align:1px}
+.ri{width:20px;height:20px;object-fit:contain;margin-right:6px;vertical-align:-5px}
+.row .role{font-weight:700;font-size:12px}
+input,select{font:inherit;font-weight:700;color:var(--text);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 6px;min-width:0;width:100%}
+.row .sr{text-align:right;font-size:22px;line-height:1;color:var(--c)}
+.name{grid-column:2/4}
+.row .name{grid-column:auto}
+.tr{position:relative;height:22px;margin:12px 6px 4px;background:linear-gradient(90deg,var(--s2),var(--line));border-radius:99px}
+.tr i{position:absolute;top:3px;width:16px;height:16px;border-radius:50%;margin-left:-8px;border:2px solid var(--surface)}
+.avg{display:flex;justify-content:space-between;align-items:flex-end;margin-top:12px}
+.avg .big{font-size:56px;line-height:.9}
+.rk{font-weight:900;font-size:15px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:12px;text-align:center}
+.grid4 div{background:var(--s2);border-radius:10px;padding:6px 2px}
+.grid4 b{display:block;font-size:24px;line-height:1.1}
+.note{font-size:11px;color:var(--muted);margin-top:10px;text-align:center}
+.hide{display:none!important}
+#modal{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9;display:flex;align-items:center;justify-content:center;padding:16px}
+#modal .in{background:var(--surface);border-radius:14px;max-width:760px;width:100%;padding:12px;max-height:90vh;display:flex;flex-direction:column;gap:8px}
+#modal .imgw{overflow:auto}#modal img{max-width:100%;border-radius:8px}
+@media(max-width:560px){
+.row{grid-template-columns:1fr 1fr 1fr 52px}.row .role{grid-column:1/3}.row .sr{grid-column:3/5}
+.row .name{grid-column:1/3}
+.vs .big{font-size:38px}.mu div{grid-template-columns:54px 1fr 48px 1fr 54px}}
+</style>
 </head>
-<body class="min-h-screen pb-12" onclick="closeAllDropdowns(event)">
-
-  <!-- Header -->
-  <header class="bg-slate-900 border-b border-slate-800 py-4 px-6 mb-8 shadow-lg">
-    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
-      <div class="flex items-center gap-3">
-        <div class="bg-ow-orange text-slate-950 font-black px-3 py-1 rounded skew-x-[-12deg] text-xl tracking-wider">
-          OW2
-        </div>
-        <h1 class="text-2xl font-black italic tracking-wide text-white">SCRIM SR CALCULATOR</h1>
-      </div>
-      
-      <!-- Mode Selector -->
-      <div class="bg-slate-800 p-1 rounded-lg border border-slate-700 flex text-sm font-bold">
-        <button id="btn-single" onclick="setMode('single')" class="px-4 py-1.5 rounded-md transition-all bg-ow-orange text-slate-950 shadow">
-          単一チーム計算
-        </button>
-        <button id="btn-vs" onclick="setMode('vs')" class="px-4 py-1.5 rounded-md transition-all text-slate-400 hover:text-white">
-          VS 対戦比較 (A vs B)
-        </button>
-      </div>
-    </div>
-  </header>
-
-  <main class="max-w-7xl mx-auto px-4">
-    
-    <!-- VS Match Summary Container (VS mode only) -->
-    <div id="vs-summary-container" class="hidden mb-8">
-      <div id="vs-summary" class="ow-card p-6 rounded-xl border-2 border-ow-orange shadow-2xl relative">
-        <div class="absolute top-4 right-4">
-          <button onclick="takeMatchScreenshot()" class="text-xs font-bold text-emerald-400 hover:text-emerald-300 bg-emerald-950/80 hover:bg-emerald-900/80 border border-emerald-600/50 px-3 py-1.5 rounded transition flex items-center gap-1 shadow">
-            📸 MATCH全体を画像保存
-          </button>
-        </div>
-        <h2 class="text-xl font-black text-center mb-4 italic tracking-wider text-slate-300">MATCH BALANCING (対戦分析)</h2>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
-          <div class="text-center p-4 bg-slate-900/60 rounded-lg border border-slate-800">
-            <div class="text-xs text-blue-400 font-bold uppercase tracking-wider mb-1">TEAM A 平均SR</div>
-            <div id="vs-teamA-sr" class="ow-font text-5xl font-bold text-white leading-none">0</div>
-            <div id="vs-teamA-rank" class="text-sm font-bold text-slate-400 mt-1">-</div>
-          </div>
-
-          <div class="text-center flex flex-col items-center justify-center">
-            <div class="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">平均SR差</div>
-            <div id="vs-diff-sr" class="ow-font text-6xl font-bold ow-orange leading-none">0</div>
-            <div id="vs-status-badge" class="mt-2 px-4 py-1 rounded-full text-xs font-black tracking-widest uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
-              GOOD MATCH
-            </div>
-          </div>
-
-          <div class="text-center p-4 bg-slate-900/60 rounded-lg border border-slate-800">
-            <div class="text-xs text-red-400 font-bold uppercase tracking-wider mb-1">TEAM B 平均SR</div>
-            <div id="vs-teamB-sr" class="ow-font text-5xl font-bold text-white leading-none">0</div>
-            <div id="vs-teamB-rank" class="text-sm font-bold text-slate-400 mt-1">-</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Teams Container -->
-    <div id="teams-wrapper" class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-
-      <!-- TEAM A -->
-      <div id="card-teamA" class="ow-card rounded-xl p-6 shadow-xl relative">
-        <div class="flex justify-between items-center mb-6 border-b border-slate-700/60 pb-3">
-          <div class="flex items-center gap-2">
-            <span class="w-3 h-3 rounded-full bg-blue-500 inline-block"></span>
-            <h2 id="title-teamA" class="text-xl font-black italic tracking-wide text-white">TEAM A メンバー編成</h2>
-          </div>
-          <div class="flex items-center gap-2">
-            <button onclick="takeScreenshot('A')" class="text-xs font-bold text-emerald-400 hover:text-emerald-300 bg-emerald-950/60 hover:bg-emerald-900/60 border border-emerald-600/50 px-3 py-1.5 rounded transition flex items-center gap-1">
-              📸 画像保存
-            </button>
-            <button onclick="resetTeam('A')" class="text-xs font-bold text-slate-400 hover:text-slate-200 bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded transition">
-              リセット
-            </button>
-          </div>
-        </div>
-
-        <!-- Players Input -->
-        <div class="space-y-4 mb-6" id="players-teamA"></div>
-
-        <!-- Team A Stats Results -->
-        <div class="bg-slate-950/80 rounded-lg p-5 border border-slate-800/80 space-y-4">
-          <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-            <div>
-              <span class="text-xs font-bold text-slate-400 block uppercase">チーム平均 (Average)</span>
-              <span id="teamA-avg-rank" class="text-sm font-black text-ow-orange">ブロンズ 5 相当</span>
-            </div>
-            <div id="teamA-avg-sr" class="ow-font text-5xl font-bold text-white leading-none">0 <span class="text-lg text-slate-500">SR</span></div>
-          </div>
-
-          <div class="grid grid-cols-3 gap-2 text-center pt-1">
-            <div class="bg-slate-900/80 p-2.5 rounded border border-slate-800">
-              <span class="text-[10px] font-bold text-slate-400 block uppercase">中央値 (Median)</span>
-              <span id="teamA-median" class="ow-font text-2xl font-bold text-slate-200">0</span>
-            </div>
-            <div class="bg-slate-900/80 p-2.5 rounded border border-slate-800">
-              <span class="text-[10px] font-bold text-slate-400 block uppercase">最高 (Max)</span>
-              <span id="teamA-max" class="ow-font text-2xl font-bold text-emerald-400">0</span>
-            </div>
-            <div class="bg-slate-900/80 p-2.5 rounded border border-slate-800">
-              <span class="text-[10px] font-bold text-slate-400 block uppercase">最低 (Min)</span>
-              <span id="teamA-min" class="ow-font text-2xl font-bold text-rose-400">0</span>
-            </div>
-          </div>
-
-          <div id="teamA-spread" class="text-xs text-slate-400 text-right pt-1 font-bold">
-            チーム内SR格差: <span id="teamA-spread-val" class="text-white">0</span> SR
-          </div>
-        </div>
-      </div>
-
-      <!-- TEAM B (VS Mode Only) -->
-      <div id="card-teamB" class="ow-card rounded-xl p-6 shadow-xl relative hidden">
-        <div class="flex justify-between items-center mb-6 border-b border-slate-700/60 pb-3">
-          <div class="flex items-center gap-2">
-            <span class="w-3 h-3 rounded-full bg-red-500 inline-block"></span>
-            <h2 class="text-xl font-black italic tracking-wide text-white">TEAM B メンバー編成</h2>
-          </div>
-          <div class="flex items-center gap-2">
-            <button onclick="takeScreenshot('B')" class="text-xs font-bold text-emerald-400 hover:text-emerald-300 bg-emerald-950/60 hover:bg-emerald-900/60 border border-emerald-600/50 px-3 py-1.5 rounded transition flex items-center gap-1">
-              📸 画像保存
-            </button>
-            <button onclick="resetTeam('B')" class="text-xs font-bold text-slate-400 hover:text-slate-200 bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded transition">
-              リセット
-            </button>
-          </div>
-        </div>
-
-        <!-- Players Input -->
-        <div class="space-y-4 mb-6" id="players-teamB"></div>
-
-        <!-- Team B Stats Results -->
-        <div class="bg-slate-950/80 rounded-lg p-5 border border-slate-800/80 space-y-4">
-          <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-            <div>
-              <span class="text-xs font-bold text-slate-400 block uppercase">チーム平均 (Average)</span>
-              <span id="teamB-avg-rank" class="text-sm font-black text-ow-orange">ブロンズ 5 相当</span>
-            </div>
-            <div id="teamB-avg-sr" class="ow-font text-5xl font-bold text-white leading-none">0 <span class="text-lg text-slate-500">SR</span></div>
-          </div>
-
-          <div class="grid grid-cols-3 gap-2 text-center pt-1">
-            <div class="bg-slate-900/80 p-2.5 rounded border border-slate-800">
-              <span class="text-[10px] font-bold text-slate-400 block uppercase">中央値 (Median)</span>
-              <span id="teamB-median" class="ow-font text-2xl font-bold text-slate-200">0</span>
-            </div>
-            <div class="bg-slate-900/80 p-2.5 rounded border border-slate-800">
-              <span class="text-[10px] font-bold text-slate-400 block uppercase">最高 (Max)</span>
-              <span id="teamB-max" class="ow-font text-2xl font-bold text-emerald-400">0</span>
-            </div>
-            <div class="bg-slate-900/80 p-2.5 rounded border border-slate-800">
-              <span class="text-[10px] font-bold text-slate-400 block uppercase">最低 (Min)</span>
-              <span id="teamB-min" class="ow-font text-2xl font-bold text-rose-400">0</span>
-            </div>
-          </div>
-
-          <div id="teamB-spread" class="text-xs text-slate-400 text-right pt-1 font-bold">
-            チーム内SR格差: <span id="teamB-spread-val" class="text-white">0</span> SR
-          </div>
-        </div>
-      </div>
-
-    </div>
-  </main>
-
-  <!-- スマホ・iPad用 画像プレビューモーダル（長押し保存用） -->
-  <div id="imageModal" class="fixed inset-0 z-50 bg-black/80 flex flex-col items-center justify-center p-4 hidden">
-    <div class="bg-slate-900 border border-slate-700 rounded-xl max-w-2xl w-full p-4 flex flex-col items-center shadow-2xl">
-      <div class="flex justify-between w-full items-center mb-3">
-        <span class="text-xs sm:text-sm font-bold text-ow-orange">📸 画像を長押しして「写真に追加」してください</span>
-        <button onclick="closeModal()" class="bg-slate-800 hover:bg-slate-700 text-white font-bold px-3 py-1 rounded text-sm transition">✕ 閉じる</button>
-      </div>
-      <div id="modalImageContainer" class="w-full overflow-auto max-h-[70vh] flex justify-center bg-slate-950 p-2 rounded">
-        <!-- 生成された画像がここに入ります -->
-      </div>
-    </div>
+<body>
+<header><div class="hin">
+  <div class="brand">
+  <h1><span class="eb">Overwatch 2</span>Scrim <em>SR</em> Calculator<small>ロールごとにランクを選ぶだけ。平均SRと対戦バランスを自動計算</small></h1></div>
+  <div class="seg"><button id="m-single" onclick="setMode('single')">単一チーム</button><button id="m-vs" onclick="setMode('vs')">A vs B</button></div>
+</div></header>
+<main>
+  <div class="btns" style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:10px">
+    <button class="btn pri" onclick="capture()">📸 画像として保存</button>
   </div>
+  <div id="stage">
+    <section id="vs" class="vs hide"></section>
+    <div id="teams" class="teams"></div>
+  </div>
+</main>
+<div id="modal" class="hide" onclick="this.classList.add('hide')"><div class="in" onclick="event.stopPropagation()">
+  <div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:13px">画像を長押しして保存してください</b><button class="btn" onclick="document.getElementById('modal').classList.add('hide')">閉じる</button></div>
+  <div class="imgw" id="modalImg"></div></div></div>
 
-  <script>
-    const ranks = [
-      { name: "ブロンズ", img: "images/bronze.png", base: 0 },
-      { name: "シルバー", img: "images/silver.png", base: 1500 },
-      { name: "ゴールド", img: "images/gold.png", base: 2000 },
-      { name: "プラチナ", img: "images/platinum.png", base: 2500 },
-      { name: "エメラルド", img: "images/emerald.png", base: 3000 },
-      { name: "ダイヤモンド", img: "images/diamond.png", base: 3500 },
-      { name: "マスター", img: "images/master.png", base: 4000 },
-      { name: "グランドマスター", img: "images/grandmaster.png", base: 4500 }
-    ];
+<script>
+const TIERS=[["ブロンズ",0,"#b0764a"],["シルバー",1500,"#9aa6b4"],["ゴールド",2000,"#e0ae1d"],["プラチナ",2500,"#3fb6bb"],["エメラルド",3000,"#2ecc71"],["ダイヤモンド",3500,"#4f94f5"],["マスター",4000,"#b46cf0"],["グランドマスター",4500,"#f0607a"],["チャンピオン",5000,"#f99e1a"]];
+const ROLES=[["🛡️","タンク","t"],["⚔️","DPS 1","d"],["⚔️","DPS 2","d"],["💚","サポート 1","s"],["💚","サポート 2","s"]];
+const KEY="ow2-scrim-sr-v2";
+// ロールアイコン: HTMLと同じ階層の images/tank.png, dps.png, support.png を読み込む（無ければ色付きドットを表示）
+const IMG={t:["tank","#4f9dff"],d:["dps","#ff6677"],s:["support","#3ddc97"]};
+const icon=k=>`<img class="ri" src="images/${IMG[k][0]}.png" data-c="${IMG[k][1]}" alt="" onerror="this.replaceWith(dotEl(this.dataset.c))">`;
+function dotEl(c){const i=document.createElement("i");i.className="dot";i.style.background=c;return i}
+const def=()=>({mode:"single",A:ROLES.map(()=>({n:"",sr:2500})),B:ROLES.map(()=>({n:"",sr:2500}))});
+let S=def();
+try{const x=JSON.parse(localStorage.getItem(KEY)||"null");if(x&&x.A&&x.B)S=x}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
 
-    const rankOptions = [];
+const toSR=(t,d)=>t===8?5000:TIERS[t][1]+(5-d)*100;
+function fromSR(sr){let t=0;TIERS.forEach((x,i)=>{if(sr>=x[1])t=i});return{t,d:t===8?1:Math.max(1,5-Math.floor((sr-TIERS[t][1])/100))}}
+const rankName=sr=>{const{t,d}=fromSR(sr);return t===8?"チャンピオン":TIERS[t][0]+" "+d};
+const rankColor=sr=>TIERS[fromSR(sr).t][2];
+const mean=a=>a.reduce((x,y)=>x+y,0)/a.length;
+function stats(k){const v=S[k].map(p=>p.sr),s=[...v].sort((a,b)=>a-b);
+  return{v,avg:Math.round(mean(v)),med:s[2],max:s[4],min:s[0],spread:s[4]-s[0]}}
 
-    ranks.forEach(r => {
-      for (let div = 5; div >= 1; div--) {
-        const sr = r.base + (5 - div) * 100;
-        rankOptions.push({
-          label: `${r.name} ${div}`,
-          sr: sr,
-          img: r.img,
-          sub: `${sr} SR`
-        });
-      }
-    });
-    rankOptions.push({ label: "チャンピオン", sr: 5000, img: "images/champion.png", sub: "5000 SR" });
+function teamHTML(k){
+  const st=stats(k),tc=k==="A"?"var(--a)":"var(--b)";
+  const title=S.mode==="single"?"チーム編成":"TEAM "+k;
+  const rows=S[k].map((p,i)=>{const{t,d}=fromSR(p.sr),r=ROLES[i];
+    return `<div class="row" style="--c:${TIERS[t][2]}">
+    <span class="role">${icon(r[2])}${r[1]}</span>
+    <input class="name" data-k="${k}" data-i="${i}" value="${p.n.replace(/"/g,"&quot;")}" placeholder="名前(任意)" maxlength="12">
+    <select data-k="${k}" data-i="${i}" data-f="t">${TIERS.map((x,j)=>`<option value="${j}"${j===t?" selected":""}>${x[0]}</option>`).join("")}</select>
+    <select data-k="${k}" data-i="${i}" data-f="d"${t===8?" disabled":""}>${[5,4,3,2,1].map(n=>`<option${n===d?" selected":""}>${n}</option>`).join("")}</select>
+    <span class="sr num">${p.sr}</span></div>`}).join("");
+  const dots=st.v.map(v=>`<i style="left:${v/50}%;background:${rankColor(v)}"></i>`).join("");
+  return `<section class="card" style="--tc:${tc}">
+  <div class="ch"><h2>${title}</h2><span data-html2canvas-ignore><button class="btn" onclick="resetTeam('${k}')">リセット</button></span></div>
+  ${rows}
+  <div class="tr" title="0〜5000SRの分布">${dots}</div>
+  <div class="avg"><div><div class="lbl">チーム平均</div><div class="rk" style="color:${rankColor(st.avg)}">${rankName(st.avg)} 相当</div></div><div class="big num">${st.avg}<span style="font-size:16px;color:var(--muted)"> SR</span></div></div>
+  <div class="grid4"><div><span class="lbl">中央値</span><b class="num">${st.med}</b></div><div><span class="lbl">最高</span><b class="num" style="color:var(--ok)">${st.max}</b></div><div><span class="lbl">最低</span><b class="num" style="color:var(--b)">${st.min}</b></div><div><span class="lbl">格差</span><b class="num">${st.spread}</b></div></div>
+  </section>`}
 
-    const roles = [
-      { id: "tank", name: "タンク", img: "images/tank.png", defaultSr: 2500 },
-      { id: "dps1", name: "DPS 1", img: "images/dps.png", defaultSr: 2500 },
-      { id: "dps2", name: "DPS 2", img: "images/dps.png", defaultSr: 2500 },
-      { id: "sup1", name: "サポート 1", img: "images/support.png", defaultSr: 2500 },
-      { id: "sup2", name: "サポート 2", img: "images/support.png", defaultSr: 2500 }
-    ];
+function vsHTML(){
+  const a=stats("A"),b=stats("B"),diff=Math.abs(a.avg-b.avg);
+  let col="var(--ok)",txt="VERY FAIR（非常に良い勝負）";
+  if(diff>250){col="var(--warn)";txt="SR GAP（格差あり）"}else if(diff>100){col="var(--a)";txt="GOOD SCRIM（適正）"}
+  const pa=1/(1+Math.pow(10,-(a.avg-b.avg)/400));
+  const pairs=[["タンク",[0]],["DPS",[1,2]],["サポート",[3,4]]];
+  const mu=pairs.map(([n,ix])=>{const x=mean(ix.map(i=>S.A[i].sr)),y=mean(ix.map(i=>S.B[i].sr)),d=x-y,w=Math.min(50,Math.abs(d)/10);
+    const bar=(side)=>`<div class="bar"><i style="${side==="l"?"right:0":"left:0"};width:${(side==="l"&&d>0)||(side==="r"&&d<0)?w*2:0}%;background:${side==="l"?"var(--a)":"var(--b)"}"></i></div>`;
+    return `<div><span class="l num" style="font-size:16px">${Math.round(x)}</span>${bar("l")}<span style="text-align:center;color:var(--muted)">${n}<br><span class="num" style="font-size:13px;color:var(--text)">${d===0?"±0":(d>0?"A +":"B +")+Math.abs(Math.round(d))}</span></span>${bar("r")}<span class="r num" style="font-size:16px">${Math.round(y)}</span></div>`}).join("");
+  return `<div class="vs-head">
+    <div><div class="lbl" style="color:var(--a)">TEAM A 平均</div><div class="big num">${a.avg}</div><div class="rk" style="color:${rankColor(a.avg)}">${rankName(a.avg)}</div></div>
+    <div><div class="lbl">平均SR差</div><div class="big num" style="color:var(--accent)">${diff}</div><span class="badge" style="color:${col}">${txt}</span></div>
+    <div><div class="lbl" style="color:var(--b)">TEAM B 平均</div><div class="big num">${b.avg}</div><div class="rk" style="color:${rankColor(b.avg)}">${rankName(b.avg)}</div></div></div>
+  <div class="prob"><i style="width:${pa*100}%;background:var(--a)"></i><i style="width:${(1-pa)*100}%;background:var(--b)"></i></div>
+  <div class="probt"><span>A ${(pa*100).toFixed(0)}%</span><span>SR差からの勝率の目安</span><span>${((1-pa)*100).toFixed(0)}% B</span></div>
+  <div class="mu">${mu}</div>`}
 
-    let currentMode = 'single';
+function render(){
+  const vs=S.mode==="vs";
+  document.getElementById("m-single").className=vs?"":"on";
+  document.getElementById("m-vs").className=vs?"on":"";
+  const v=document.getElementById("vs");v.classList.toggle("hide",!vs);
+  if(vs)v.innerHTML=vsHTML();
+  const t=document.getElementById("teams");t.className="teams"+(vs?" two":"");
+  t.innerHTML=teamHTML("A")+(vs?teamHTML("B"):"");
+}
+function setMode(m){S.mode=m;save();render()}
+function resetTeam(k){S[k]=ROLES.map(()=>({n:"",sr:2500}));save();render()}
 
-    function init() {
-      renderTeamInputs('A');
-      renderTeamInputs('B');
-      calculateStats('A');
-      calculateStats('B');
+document.addEventListener("change",e=>{
+  const el=e.target,f=el.dataset.f;if(!f)return;
+  const{k,i}=el.dataset,row=el.closest(".row"),sel=row.querySelectorAll("select");
+  const t=+sel[0].value,d=+sel[1].value;
+  S[k][+i].sr=toSR(t,d);save();render();
+});
+document.addEventListener("input",e=>{
+  const el=e.target;if(!el.classList.contains("name"))return;
+  S[el.dataset.k][+el.dataset.i].n=el.value;save();
+});
+
+const isMobile=()=>/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.maxTouchPoints>2);
+function capture(){
+  const el=document.getElementById("stage");
+  const bg=getComputedStyle(document.body).backgroundColor;
+  html2canvas(el,{backgroundColor:bg,scale:2,useCORS:true}).then(c=>{
+    const url=c.toDataURL("image/png");
+    if(isMobile()){
+      document.getElementById("modalImg").innerHTML='<img src="'+url+'" alt="結果画像">';
+      document.getElementById("modal").classList.remove("hide");
+    }else{
+      const a=document.createElement("a");a.download="OW2_Scrim_SR.png";a.href=url;
+      document.body.appendChild(a);a.click();a.remove();
     }
-
-    function renderTeamInputs(team) {
-      const container = document.getElementById(`players-team${team}`);
-      container.innerHTML = '';
-
-      roles.forEach(role => {
-        const row = document.createElement('div');
-        row.className = 'flex items-center justify-between gap-3 bg-slate-900/60 p-3 rounded-lg border border-slate-800 relative';
-        
-        const defaultOpt = rankOptions.find(opt => opt.sr === role.defaultSr) || rankOptions[0];
-        
-        row.innerHTML = `
-          <div class="flex items-center gap-2 min-w-[130px]">
-            <img src="${role.img}" class="w-6 h-6 object-contain" onerror="this.style.display='none'">
-            <span class="text-sm font-bold text-slate-200">${role.name}</span>
-          </div>
-          
-          <div class="relative w-full" data-team="${team}" data-role="${role.id}">
-            <input type="hidden" id="${team}_${role.id}" value="${defaultOpt.sr}" onchange="calculateStats('${team}')">
-            
-            <button type="button" onclick="toggleDropdown(event, '${team}', '${role.id}')" 
-                    class="w-full bg-slate-800 border border-slate-700 text-white font-bold text-sm rounded-lg px-3 py-2 flex items-center justify-between hover:border-ow-orange focus:outline-none">
-              <span class="flex items-center gap-2" id="${team}_${role.id}_selected">
-                <img src="${defaultOpt.img}" class="w-5 h-5 object-contain" onerror="this.style.display='none'">
-                <span>${defaultOpt.label} (${defaultOpt.sub})</span>
-              </span>
-              <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-            </button>
-
-            <div id="${team}_${role.id}_dropdown" class="hidden absolute z-50 mt-1 w-full bg-slate-900 border border-slate-700 rounded-lg shadow-2xl max-h-60 overflow-y-auto custom-scroll">
-              ${rankOptions.map(opt => `
-                <div onclick="selectRank('${team}', '${role.id}', ${opt.sr}, '${opt.label}', '${opt.sub}', '${opt.img}')" 
-                     class="flex items-center gap-2 px-3 py-2 hover:bg-slate-800 cursor-pointer text-sm font-bold text-slate-200 border-b border-slate-800/50">
-                  <img src="${opt.img}" class="w-5 h-5 object-contain" onerror="this.style.display='none'">
-                  <span>${opt.label}</span>
-                  <span class="ml-auto text-xs text-slate-400">${opt.sub}</span>
-                </div>
-              `).join('')}
-            </div>
-          </div>
-        `;
-        container.appendChild(row);
-      });
-    }
-
-    function toggleDropdown(event, team, roleId) {
-      event.stopPropagation();
-      document.querySelectorAll("[id$='_dropdown']").forEach(el => {
-        if (el.id !== `${team}_${roleId}_dropdown`) el.classList.add('hidden');
-      });
-      const dropdown = document.getElementById(`${team}_${roleId}_dropdown`);
-      dropdown.classList.toggle('hidden');
-    }
-
-    function closeAllDropdowns(event) {
-      document.querySelectorAll("[id$='_dropdown']").forEach(el => el.classList.add('hidden'));
-    }
-
-    function selectRank(team, roleId, sr, label, sub, img) {
-      document.getElementById(`${team}_${roleId}`).value = sr;
-      document.getElementById(`${team}_${roleId}_selected`).innerHTML = `
-        <img src="${img}" class="w-5 h-5 object-contain" onerror="this.style.display='none'">
-        <span>${label} (${sub})</span>
-      `;
-      document.getElementById(`${team}_${roleId}_dropdown`).classList.add('hidden');
-      calculateStats(team);
-    }
-
-    function getRankNameFromSR(sr) {
-      if (sr >= 5000) return "チャンピオン";
-      if (sr < 0) return "ブロンズ 5";
-
-      for (let i = ranks.length - 1; i >= 0; i--) {
-        if (sr >= ranks[i].base) {
-          const diff = sr - ranks[i].base;
-          const divOffset = Math.floor(diff / 100);
-          const div = Math.max(1, 5 - divOffset);
-          return `${ranks[i].name} ${div}`;
-        }
-      }
-      return "ブロンズ 5";
-    }
-
-    function calculateStats(team) {
-      const playerSrs = roles.map(role => {
-        const input = document.getElementById(`${team}_${role.id}`);
-        return parseInt(input.value, 10);
-      });
-
-      const sum = playerSrs.reduce((a, b) => a + b, 0);
-      const avg = Math.round(sum / playerSrs.length);
-
-      const sorted = [...playerSrs].sort((a, b) => a - b);
-      const median = sorted[2];
-
-      const max = Math.max(...playerSrs);
-      const min = Math.min(...playerSrs);
-      const spread = max - min;
-
-      document.getElementById(`team${team}-avg-sr`).childNodes[0].nodeValue = `${avg} `;
-      document.getElementById(`team${team}-avg-rank`).textContent = `${getRankNameFromSR(avg)} 相当`;
-      document.getElementById(`team${team}-median`).textContent = median;
-      document.getElementById(`team${team}-max`).textContent = max;
-      document.getElementById(`team${team}-min`).textContent = min;
-      document.getElementById(`team${team}-spread-val`).textContent = spread;
-
-      if (currentMode === 'vs') {
-        updateVsSummary();
-      }
-    }
-
-    function updateVsSummary() {
-      const getAvg = (team) => {
-        const srs = roles.map(role => parseInt(document.getElementById(`${team}_${role.id}`).value, 10));
-        return Math.round(srs.reduce((a, b) => a + b, 0) / srs.length);
-      };
-
-      const avgA = getAvg('A');
-      const avgB = getAvg('B');
-      const diff = Math.abs(avgA - avgB);
-
-      document.getElementById('vs-teamA-sr').textContent = avgA;
-      document.getElementById('vs-teamA-rank').textContent = `${getRankNameFromSR(avgA)} 相当`;
-
-      document.getElementById('vs-teamB-sr').textContent = avgB;
-      document.getElementById('vs-teamB-rank').textContent = `${getRankNameFromSR(avgB)} 相当`;
-
-      document.getElementById('vs-diff-sr').textContent = diff;
-
-      const badge = document.getElementById('vs-status-badge');
-      if (diff <= 100) {
-        badge.className = "mt-2 px-4 py-1 rounded-full text-xs font-black tracking-widest uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/40";
-        badge.textContent = "VERY FAIR MATCH (非常に良い勝負)";
-      } else if (diff <= 250) {
-        badge.className = "mt-2 px-4 py-1 rounded-full text-xs font-black tracking-widest uppercase bg-blue-500/20 text-blue-400 border border-blue-500/40";
-        badge.textContent = "GOOD SCRIM (適正スクリム)";
-      } else {
-        badge.className = "mt-2 px-4 py-1 rounded-full text-xs font-black tracking-widest uppercase bg-amber-500/20 text-amber-400 border border-amber-500/40";
-        badge.textContent = "SR GAP DETECTED (格差あり)";
-      }
-    }
-
-    function setMode(mode) {
-      currentMode = mode;
-      const btnSingle = document.getElementById('btn-single');
-      const btnVs = document.getElementById('btn-vs');
-      const cardB = document.getElementById('card-teamB');
-      const vsSummaryContainer = document.getElementById('vs-summary-container');
-      const titleA = document.getElementById('title-teamA');
-
-      if (mode === 'single') {
-        btnSingle.className = "px-4 py-1.5 rounded-md transition-all bg-ow-orange text-slate-950 shadow";
-        btnVs.className = "px-4 py-1.5 rounded-md transition-all text-slate-400 hover:text-white";
-        cardB.classList.add('hidden');
-        vsSummaryContainer.classList.add('hidden');
-        titleA.textContent = "チーム メンバー編成";
-      } else {
-        btnVs.className = "px-4 py-1.5 rounded-md transition-all bg-ow-orange text-slate-950 shadow";
-        btnSingle.className = "px-4 py-1.5 rounded-md transition-all text-slate-400 hover:text-white";
-        cardB.classList.remove('hidden');
-        vsSummaryContainer.classList.remove('hidden');
-        titleA.textContent = "TEAM A メンバー編成";
-        updateVsSummary();
-      }
-    }
-
-    function resetTeam(team) {
-      roles.forEach(role => {
-        const defaultOpt = rankOptions.find(opt => opt.sr === role.defaultSr);
-        selectRank(team, role.id, defaultOpt.sr, defaultOpt.label, defaultOpt.sub, defaultOpt.img);
-      });
-    }
-
-    // デバイス判定（スマホ・タブレットかどうか）
-    function isMobileDevice() {
-      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (navigator.maxTouchPoints && navigator.maxTouchPoints > 2);
-    }
-
-    function showImageModal(imageUrl) {
-      const modal = document.getElementById('imageModal');
-      const container = document.getElementById('modalImageContainer');
-      container.innerHTML = `<img src="${imageUrl}" class="max-w-full rounded shadow-lg" alt="Generated Screenshot">`;
-      modal.classList.remove('hidden');
-    }
-
-    function closeModal() {
-      const modal = document.getElementById('imageModal');
-      modal.classList.add('hidden');
-    }
-
-    // 単一チーム用スクショ
-    function takeScreenshot(team) {
-      const cardElement = document.getElementById(`card-team${team}`);
-      html2canvas(cardElement, {
-        backgroundColor: '#131b2e',
-        scale: 2,
-        useCORS: true
-      }).then(canvas => {
-        const imageUrl = canvas.toDataURL('image/png');
-        
-        if (isMobileDevice()) {
-          showImageModal(imageUrl);
-        } else {
-          const link = document.createElement('a');
-          link.download = `OW2_Team_${team}_SR_Result.png`;
-          link.href = imageUrl;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-        }
-      }).catch(err => {
-        alert("画像の生成に失敗しました: " + err);
-      });
-    }
-
-    // VS対戦比較モード用
-    function takeMatchScreenshot() {
-      const summaryElement = document.getElementById('vs-summary');
-      const wrapperElement = document.getElementById('teams-wrapper');
-
-      const container = document.createElement('div');
-      container.style.backgroundColor = '#0f141d';
-      container.style.padding = '24px';
-      container.style.width = '1200px';
-      
-      const cloneSummary = summaryElement.cloneNode(true);
-      const btnInClone = cloneSummary.querySelector('button');
-      if (btnInClone) btnInClone.remove();
-
-      const cloneWrapper = wrapperElement.cloneNode(true);
-
-      container.appendChild(cloneSummary);
-      const spacer = document.createElement('div');
-      spacer.style.height = '24px';
-      container.appendChild(spacer);
-      container.appendChild(cloneWrapper);
-
-      document.body.appendChild(container);
-
-      html2canvas(container, {
-        backgroundColor: '#0f141d',
-        scale: 2,
-        useCORS: true
-      }).then(canvas => {
-        document.body.removeChild(container);
-        const imageUrl = canvas.toDataURL('image/png');
-
-        if (isMobileDevice()) {
-          showImageModal(imageUrl);
-        } else {
-          const link = document.createElement('a');
-          link.download = `OW2_Scrim_Match_Analysis.png`;
-          link.href = imageUrl;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-        }
-      }).catch(err => {
-        if (container.parentNode) document.body.removeChild(container);
-        alert("画像の生成に失敗しました: " + err);
-      });
-    }
-
-    window.onload = init;
-  </script>
+  }).catch(err=>alert("画像の生成に失敗しました: "+err));
+}
+render();
+</script>
 </body>
 </html>

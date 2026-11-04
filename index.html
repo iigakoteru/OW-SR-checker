@@ -52,12 +52,13 @@ main{max-width:1100px;margin:0 auto}
 .ch h2{margin:0;font-size:17px;font-weight:900}
 .btn{border:1px solid var(--line);background:var(--s2);color:var(--text);font:700 12px inherit;font-family:inherit;padding:6px 11px;border-radius:8px;cursor:pointer}
 .btn.pri{background:var(--accent);border-color:var(--accent);color:#1a1200}
-.row{display:grid;grid-template-columns:100px 1fr 1fr 62px 52px;gap:6px;align-items:center;padding:8px 10px;margin-bottom:6px;background:var(--s2);border-radius:8px;border-left:3px solid var(--c)}
+.row{display:grid;grid-template-columns:100px 1fr 1fr 62px 86px;gap:6px;align-items:center;padding:8px 10px;margin-bottom:6px;background:var(--s2);border-radius:8px;border-left:3px solid var(--c)}
 .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:7px;vertical-align:1px}
 .ri{width:20px;height:20px;object-fit:contain;margin-right:6px;vertical-align:-5px}
 .row .role{font-weight:700;font-size:12px}
 input,select{font:inherit;font-weight:700;color:var(--text);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 6px;min-width:0;width:100%}
-.row .sr{text-align:right;font-size:22px;line-height:1;color:var(--c)}
+.row .sr{display:flex;align-items:center;justify-content:flex-end;gap:5px;font-size:22px;line-height:1;color:var(--c)}
+.ti{width:26px;height:26px;object-fit:contain;flex:none}
 .name{grid-column:2/4}
 .row .name{grid-column:auto}
 .tr{position:relative;height:22px;margin:12px 6px 4px;background:linear-gradient(90deg,var(--s2),var(--line));border-radius:99px}
@@ -115,6 +116,9 @@ const toSR=(t,d)=>t===8?5000:TIERS[t][1]+(5-d)*100;
 function fromSR(sr){let t=0;TIERS.forEach((x,i)=>{if(sr>=x[1])t=i});return{t,d:t===8?1:Math.max(1,5-Math.floor((sr-TIERS[t][1])/100))}}
 const rankName=sr=>{const{t,d}=fromSR(sr);return t===8?"チャンピオン":TIERS[t][0]+" "+d};
 const rankColor=sr=>TIERS[fromSR(sr).t][2];
+// ランクアイコン: images/bronze.png 〜 champion.png（無ければ非表示）
+const TF=["bronze","silver","gold","platinum","emerald","diamond","master","grandmaster","champion"];
+const rimg=sr=>`<img class="ti" src="images/${TF[fromSR(sr).t]}.png" alt="" onerror="this.remove()">`;
 const mean=a=>a.reduce((x,y)=>x+y,0)/a.length;
 function stats(k){const v=S[k].map(p=>p.sr),s=[...v].sort((a,b)=>a-b);
   return{v,avg:Math.round(mean(v)),med:s[2],max:s[4],min:s[0],spread:s[4]-s[0]}}
@@ -128,7 +132,7 @@ function teamHTML(k){
     <input class="name" data-k="${k}" data-i="${i}" value="${p.n.replace(/"/g,"&quot;")}" placeholder="名前(任意)" maxlength="12">
     <select data-k="${k}" data-i="${i}" data-f="t">${TIERS.map((x,j)=>`<option value="${j}"${j===t?" selected":""}>${x[0]}</option>`).join("")}</select>
     <select data-k="${k}" data-i="${i}" data-f="d"${t===8?" disabled":""}>${[5,4,3,2,1].map(n=>`<option${n===d?" selected":""}>${n}</option>`).join("")}</select>
-    <span class="sr num">${p.sr}</span></div>`}).join("");
+    <span class="sr num">${rimg(p.sr)}${p.sr}</span></div>`}).join("");
   const dots=st.v.map(v=>`<i style="left:${v/50}%;background:${rankColor(v)}"></i>`).join("");
   return `<section class="card" style="--tc:${tc}">
   <div class="ch"><h2>${title}</h2><span data-html2canvas-ignore><button class="btn" onclick="resetTeam('${k}')">リセット</button></span></div>
